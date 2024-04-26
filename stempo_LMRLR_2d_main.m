@@ -52,7 +52,7 @@ close all
 %% Load data
 
 % Sequence of 8x45 projection scans with 8 degree angle interval
-binning = 8;
+binning = 16;
 dataset = 'cont360'; % 'seq8x45'; % cont360
 switch dataset
     case 'seq8x45'
@@ -79,8 +79,8 @@ N = 2240 / binning; % Spatial resolution of 2d slices
 % t=1 :  X   X   X   X   X  ...  X
 % t=2 :                  X  ...  X    X    X    X    X
 % etc.
-Nangles = 30;
-angShift = 10;
+Nangles = 40;
+angShift = 20;
 T = (CtData.parameters.numberImages - Nangles + angShift) / angShift;
 
 % Projection angles are stored in columns
@@ -109,17 +109,19 @@ end
 
 % Build a block diagonal forward operator
 opCell = cell(1,T);
+Anorm = zeros(1,T);
 for t = 1:T
     % Change the projection angles stored in CtData
     CtData.parameters.angles = angleArray(:,t);
     % Create and store the operator in a cell array
     opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
+    Anorm(t) = normest(opCell{t});
 end
 % cell{:} gives the content of a cell array as comma separated list
 A = blkdiag(opCell{:});
+Anorm = max(Anorm);
 
 % Normalize data and operator
-Anorm = normest(A);
 A = A/Anorm;
 m = m(:)/Anorm;
 
@@ -132,10 +134,10 @@ fprintf('Added Gaussian noise: delta = %0.2f\n',delta)
 % Set parameters
 param.maxIter = 500;
 param.tol = 5e-4;
-param.mu = 2e-3; % Regularization parameter
+param.mu = 1e-3; %1e-3; % Regularization parameter
 param.plotFreq = 10; % Visualize iterations 
-param.wName = 'db2';
-param.wLevel = 5;
+param.wName = 'haar';
+param.wLevel = 3;
 param.wMode = 'sym';
 xSz = [N,N,T];
 

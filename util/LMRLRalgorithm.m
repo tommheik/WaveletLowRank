@@ -36,8 +36,16 @@ T = xSz(3);
 
 dwtmode(wMode,'nodisp');
 % Get wavelet coefficient array size
-[~, Swd] = wavedec2(x(:,:,1),wLevel,wName);
-Psz = flipud(Swd);
+[~, Csz] = wavedec2(x(:,:,1),wLevel,wName);
+Csz = flipud(Csz(1:end-1,:));
+W.Csz = Csz;
+
+% Patch size
+% Psz = [24, 24; 19, 19; 21, 21; 7, 7]; % db3
+Psz = [7, 7; 7, 7; 9, 9; 6, 6]; % haar
+fprintf("=== Subband and patch sizes per level ===\n")
+disp([' Coeff. ', 'sizes ', ' Patch ', 'sizes '])
+disp([Csz, Psz])
 W.level = wLevel;
 W.name = wName;
 W.mode = wMode;
@@ -45,9 +53,9 @@ W.mode = wMode;
 m = m(:); % Drop to column vector
 vec = @(x) x(:);
 
-% Initialize
+% InitializeBx = array1
 x = zeros(xSz, class(m));
-v = zeros([sum(Psz(2:end,:)),T], class(m));
+v = zeros([sum(Csz),T], class(m));
 invBv = x; % B^T(v), but v is initialized as zeros
 bp = A'*(-m); % This is needed later
 
@@ -61,6 +69,7 @@ gamma = 1; % < 2/Lipschitz constant of the gradient of f
 relChange = nan(1,maxIter);
 dataFit = nan(1,maxIter);
 nuclear = nan(1,maxIter);
+objFun = nan(1,maxIter);
 
 tic;
 fprintf('----------\nBegin!\n----------\n')
@@ -77,7 +86,7 @@ while iter < maxIter
     By = array2Wpatch(y, W, 0, Psz); % No thresholding
     [prox2, nn] = array2Wpatch(invBv + y, W, mu, Psz); % This is not the correct value for the nuclear norm
     v = v + By - prox2;
-    invBv = Wpatch2array(v, W, xSz, Psz);
+    invBv = Wpatch2array(v, W, xSz);
     x = max(0, xOld - gamma*bp - lambda*vec(invBv)); % Column vector
 
     % data consistency
@@ -88,13 +97,14 @@ while iter < maxIter
     relChange(iter) = norm(x - xOld)/norm(xOld);
     dataFit(iter) = norm(dif);
     nuclear(iter) = nn;
+    objFun(iter) = dataFit(iter)^2 + mu*nuclear(iter);
 
     x = reshape(x, xSz);
     
     if mod(iter,10) == 0
         fprintf('Iteration number %d reached \n', iter);
         fprintf('Relative change: %.5f \n', relChange(iter));
-        fprintf('Cost function: %.2f \n', dataFit(iter)^2 + mu*nuclear(iter));
+        fprintf('Cost function: %.2f \n', objFun(iter));
         fprintf('----------\n')
     end
     
@@ -105,14 +115,21 @@ while iter < maxIter
         drawnow
 
         figure(101)
-        imagesc(abs(prox2(:,:,1)));
+        imagesc(prox2(:,:,1));
         title(sprintf('Wavelet array at iter: %d', iter));
+        axis equal
+        axis off
         drawnow
     end
     
     % Stop once relative change is below tolerance
     if relChange(iter) < tol
         fprintf('Stopping criterion reached after %d iterations \n',iter);
+        break
+    end
+    % Stop if something is wrong
+    if isnan(objFun(iter)) || isinf(objFun(iter))
+        fprintf('Something wrong! Stopping after %d iterations \n',iter);
         break
     end
 end

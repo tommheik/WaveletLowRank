@@ -1,2 +1,2 @@
 # WaveletLowRank
- Wavelet Domain Local Low-Rank Algorithms
+ MultiResolution Low-Rank (MRLR) Algorithms for dynamic X-ray tomography
