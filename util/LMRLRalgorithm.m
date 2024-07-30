@@ -7,6 +7,7 @@ function [x, iter, info] = LMRLRalgorithm(A, m, xSz, param)
 %   m       Data stack
 %   xSz     Size of the reconstruction array: xSz = [N N T]
 %   param   Optional parameters such as
+%       Psz         Patch sizes for every decomposition level.
 %       maxIter     Maximum number of iterations. DEFAULT = 1000
 %       wName       Wavelet type. DEFAULT = 'haar'
 %       wLevel      Wavelet decomposition level. DEFAULT = 3
@@ -41,8 +42,7 @@ Csz = flipud(Csz(1:end-1,:));
 W.Csz = Csz;
 
 % Patch size
-% Psz = [24, 24; 19, 19; 21, 21; 7, 7]; % db3
-Psz = [7, 7; 7, 7; 9, 9; 6, 6]; % haar
+Psz = param.Psz;
 fprintf("=== Subband and patch sizes per level ===\n")
 disp([' Coeff. ', 'sizes ', ' Patch ', 'sizes '])
 disp([Csz, Psz])
@@ -146,6 +146,9 @@ else
     dataFit = dataFit(1:iter);
     nuclear = nuclear(1:iter);
 end
+
+W.Psz = Psz;
+info.MRSystem = W;
 info.relChange = relChange;
 info.dataFit = dataFit;
 info.nuclear = nuclear;

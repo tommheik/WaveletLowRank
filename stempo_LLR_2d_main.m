@@ -48,9 +48,8 @@ close all
 
 %% Load data
 
-% Sequence of 8x45 projection scans with 8 degree angle interval
 binning = 8;
-dataset = 'seq8x45'; % 'seq8x45'; % cont360
+dataset = 'cont360'; % 'seq8x45'; % cont360
 switch dataset
     case 'seq8x45'
         load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_seq8x45_2d_b%d.mat',binning)))
@@ -76,8 +75,8 @@ N = 2240 / binning; % Spatial resolution of 2d slices
 % t=1 :  X   X   X   X   X  ...  X
 % t=2 :                  X  ...  X    X    X    X    X
 % etc.
-Nangles = 24;
-angShift = 8;
+Nangles = 30;
+angShift = 10;
 T = (CtData.parameters.numberImages - Nangles + angShift) / angShift;
 
 % Projection angles are stored in columns
@@ -110,6 +109,7 @@ for t = 1:T
     % Change the projection angles stored in CtData
     CtData.parameters.angles = angleArray(:,t);
     % Create and store the operator in a cell array
+    fprintf("Op. %i/%i: ", t, T);
     opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
 end
 % cell{:} gives the content of a cell array as comma separated list

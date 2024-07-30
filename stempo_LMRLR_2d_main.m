@@ -51,8 +51,7 @@ close all
 
 %% Load data
 
-% Sequence of 8x45 projection scans with 8 degree angle interval
-binning = 16;
+binning = 8;
 dataset = 'cont360'; % 'seq8x45'; % cont360
 switch dataset
     case 'seq8x45'
@@ -68,7 +67,7 @@ addpath('./util')
 
 N = 2240 / binning; % Spatial resolution of 2d slices
 
-% We wish to split the 8 full rotations (45 projections each) into as many
+% We wish to split the sinogram into as many
 % time steps as possible (since that greatly limits the SVD and number of
 % singular values). We can take 'Nangles' projections per time step and 
 % advance only by angShift projections for the next time step such that two 
@@ -79,8 +78,8 @@ N = 2240 / binning; % Spatial resolution of 2d slices
 % t=1 :  X   X   X   X   X  ...  X
 % t=2 :                  X  ...  X    X    X    X    X
 % etc.
-Nangles = 40;
-angShift = 20;
+Nangles = 30;
+angShift = 10;
 T = (CtData.parameters.numberImages - Nangles + angShift) / angShift;
 
 % Projection angles are stored in columns
@@ -114,6 +113,7 @@ for t = 1:T
     % Change the projection angles stored in CtData
     CtData.parameters.angles = angleArray(:,t);
     % Create and store the operator in a cell array
+    fprintf("Op. %i/%i: ", t, T);
     opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
     Anorm(t) = normest(opCell{t});
 end
@@ -132,13 +132,20 @@ fprintf('Added Gaussian noise: delta = %0.2f\n',delta)
 
 %% Run the algorithm
 % Set parameters
+
+% Psz = [24, 24; 19, 19; 21, 21; 7, 7]; % db3
+%Psz = [7, 7; 7, 7; 7, 7];% 9, 9; % 6, 6]; % haar
+% Psz = [5, 5; 7, 7; 9, 9; 9, 9];
+Psz = [7, 7; 7, 7; 7, 7; 7, 7];
+
+param.Psz = Psz;
 param.maxIter = 500;
 param.tol = 5e-4;
-param.mu = 1e-3; %1e-3; % Regularization parameter
+param.mu = 1e-2; %1e-3; % Regularization parameter
 param.plotFreq = 10; % Visualize iterations 
-param.wName = 'haar';
+param.wName = 'db2';
 param.wLevel = 3;
-param.wMode = 'sym';
+param.wMode = 'per';
 xSz = [N,N,T];
 
 % Iterate
