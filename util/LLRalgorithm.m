@@ -36,12 +36,12 @@ if isfield(param,'tol'); tol = param.tol; else; tol = 3; fprintf('Using default 
 if isfield(param,'mu'); mu = param.mu; else; mu = 1; fprintf('Using default value for mu \n'); end
 if isfield(param,'pSz'); pSz = param.pSz; else; pSz = 10; fprintf('Using default value for pSz \n'); end
 if isfield(param,'plotFreq'); plotFreq = param.plotFreq; else; plotFreq = 0; fprintf('Using default value for plotFreq\n'); end
+if isfield(param,'x0'); x = param.x0; else; x = zeros(xSz, class(m)); fprintf('Using default value for x0\n'); end
 
 m = m(:); % Drop to column vector
 vec = @(x) x(:);
 
 % Initialize
-x = zeros(xSz, class(m));
 v = array2patch(x, pSz);
 bp = -A'*m; % This is needed later
 
@@ -57,7 +57,11 @@ dataFit = nan(1,maxIter);
 nuclear = nan(1,maxIter);
 
 tic;
-fprintf('----------\nBegin!\n----------\n')
+fprintf('----------\nBegin LLR!\n----------\n')
+
+if plotFreq > 0
+    f = figure;
+end
 
 %% Iterate
 while iter < maxIter
@@ -97,9 +101,9 @@ while iter < maxIter
     end
     
     if mod(iter,plotFreq) == 0
-        figure(100)
+        figure(f)
         montage(x, 'DisplayRange', []);
-        title(sprintf('Reconstruction at iter: %d', iter));
+        title(sprintf('LLR Reconstruction at iter: %d', iter));
         drawnow
     end
     

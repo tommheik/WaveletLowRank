@@ -1,6 +1,6 @@
 %%%%%% stempo_LMRLR_2d_main.m %%%%%%
 %
-% Example code for reconstructing the STEMPO phantom data using local
+% Example code for reconstructing dynamic CT data using local
 % multiresolution low-rank approximation
 % 
 %%%%%%
@@ -51,21 +51,35 @@ close all
 
 %% Load data
 
-binning = 8;
-dataset = 'cont360'; % 'seq8x45'; % cont360
-switch dataset
-    case 'seq8x45'
-        load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_seq8x45_2d_b%d.mat',binning)))
-        dAngle = 8; % seq8x45 data is measured every 8 degrees
-    case 'cont360'
-        load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_cont360_2d_b%d.mat',binning)))
-        dAngle = 1; % cont360 data is measured every 1 degrees
+dataType = 'simulated'; % 'STEMPO' or 'simulated';
+
+switch dataType
+    case 'STEMPO'
+        binning = 8;
+        dataset = 'cont360'; % 'seq8x45'; % cont360
+        switch dataset
+            case 'seq8x45'
+                load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_seq8x45_2d_b%d.mat',binning)))
+                dAngle = 8; % seq8x45 data is measured every 8 degrees
+            case 'cont360'
+                load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_cont360_2d_b%d.mat',binning)))
+                dAngle = 1; % cont360 data is measured every 1 degrees
+        end
+        N = 2240 / binning; % Spatial resolution of 2d slices
+        Ndet = N;
+        numberImages = CtData.parameters.numberImages;
+        sinogram = CtData.sinogram;
+
+    case 'simulated'
+        load("data/simData_dynamic_256x256x180_parallel.mat");
+
+        N = size(obj,1); % Spatial resolution of 2d slices
+        [numberImages, Ndet] = size(sinogram);
+        dAngle = 1; % Difference between consecutive projection angles
 end
 
 addpath('./util')
 %% Choose parameters
-
-N = 2240 / binning; % Spatial resolution of 2d slices
 
 % We wish to split the sinogram into as many
 % time steps as possible (since that greatly limits the SVD and number of
@@ -78,16 +92,17 @@ N = 2240 / binning; % Spatial resolution of 2d slices
 % t=1 :  X   X   X   X   X  ...  X
 % t=2 :                  X  ...  X    X    X    X    X
 % etc.
-Nangles = 30;
-angShift = 10;
-T = (CtData.parameters.numberImages - Nangles + angShift) / angShift;
 
-% Projection angles are stored in columns
+Nangles = 45;
+angShift = 15;
+T = (numberImages - Nangles + angShift) / angShift;
+
+% Projection angles are stored in columns (degrees!)
 angleArray = dAngle*((0:1:Nangles-1)' + angShift*(0:1:T-1));
 
 % Reorganize the data in a similar manner to match the projection angles
 mInd = (1:Nangles)' + angShift*(0:1:T-1);
-m = permute(reshape(CtData.sinogram(mInd(:),:),[Nangles,T,N]),[1,3,2]);
+m = permute(reshape(sinogram(mInd(:),:),[Nangles,T,Ndet]),[1,3,2]);
 % Permuting the array guarantees the time steps stay in order once m is
 % dropped into a single column vector
 
@@ -110,11 +125,17 @@ end
 opCell = cell(1,T);
 Anorm = zeros(1,T);
 for t = 1:T
-    % Change the projection angles stored in CtData
-    CtData.parameters.angles = angleArray(:,t);
     % Create and store the operator in a cell array
     fprintf("Op. %i/%i: ", t, T);
-    opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
+    switch dataType
+        case 'STEMPO'
+            % Change the projection angles stored in CtData
+            CtData.parameters.angles = angleArray(:,t);
+            opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
+        case 'simulated'
+            anglesRad = deg2rad(angleArray(:,t));
+            opCell{t} = create_ct_operator_2d_parallel_astra_cpu(N, N, Ndet, anglesRad);
+    end
     Anorm(t) = normest(opCell{t});
 end
 % cell{:} gives the content of a cell array as comma separated list
@@ -126,24 +147,23 @@ A = A/Anorm;
 m = m(:)/Anorm;
 
 mMax = max(m(:));
-delta = 0.03; % Noise level
+delta = 0.0; % Noise level
 m = m + delta*mMax*randn(size(m)); % Gaussian noise
 fprintf('Added Gaussian noise: delta = %0.2f\n',delta)
 
 %% Run the algorithm
 % Set parameters
 
-% Psz = [24, 24; 19, 19; 21, 21; 7, 7]; % db3
-%Psz = [7, 7; 7, 7; 7, 7];% 9, 9; % 6, 6]; % haar
-% Psz = [5, 5; 7, 7; 9, 9; 9, 9];
-Psz = [7, 7; 7, 7; 7, 7; 7, 7];
+% Patch sizes (per scale)
+% Psz = [7, 7; 7, 7; 7, 7; 7, 7];
+Psz = [16, 16; 8, 8; 8, 8; 8, 8];
 
 param.Psz = Psz;
-param.maxIter = 500;
+param.maxIter = 600;
 param.tol = 5e-4;
-param.mu = 1e-2; %1e-3; % Regularization parameter
+param.mu = 5e-1; %1e-2; % Regularization parameter
 param.plotFreq = 10; % Visualize iterations 
-param.wName = 'db2';
+param.wName = 'db3';
 param.wLevel = 3;
 param.wMode = 'per';
 xSz = [N,N,T];

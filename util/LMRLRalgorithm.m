@@ -30,8 +30,8 @@ if isfield(param,'wMode'); wMode = param.wMode; else; wMode = 'per'; fprintf('Us
 if isfield(param,'tol'); tol = param.tol; else; tol = 3; end
 if isfield(param,'mu'); mu = param.mu; else; mu = 1; fprintf('Using default value for mu \n'); end
 if isfield(param,'plotFreq'); plotFreq = param.plotFreq; else; plotFreq = 0; fprintf('Using default value for plotFreq\n'); end
+if isfield(param,'x0'); x = param.x0; else; x = zeros(xSz, class(m)); fprintf('Using default value for x0\n'); end
 
-x = zeros(xSz);
 T = xSz(3);
 
 
@@ -54,9 +54,8 @@ m = m(:); % Drop to column vector
 vec = @(x) x(:);
 
 % InitializeBx = array1
-x = zeros(xSz, class(m));
 v = zeros([sum(Csz),T], class(m));
-invBv = x; % B^T(v), but v is initialized as zeros
+invBv = zeros(xSz, class(m)); % B^T(v), but v is initialized as zeros
 bp = A'*(-m); % This is needed later
 
 iter = 0;
@@ -72,7 +71,12 @@ nuclear = nan(1,maxIter);
 objFun = nan(1,maxIter);
 
 tic;
-fprintf('----------\nBegin!\n----------\n')
+fprintf('----------\nBegin LMRLR!\n----------\n')
+
+if plotFreq > 0
+    f1 = figure;
+    f2 = figure;
+end
 
 %% Iterate
 while iter < maxIter
@@ -109,14 +113,15 @@ while iter < maxIter
     end
     
     if mod(iter,plotFreq) == 0
-        figure(100)
+        figure(f1)
         montage(x, 'DisplayRange', []);
-        title(sprintf('Reconstruction at iter: %d', iter));
+        title(sprintf('LMRLR Reconstruction at iter: %d', iter));
         drawnow
 
-        figure(101)
-        imagesc(prox2(:,:,1));
-        title(sprintf('Wavelet array at iter: %d', iter));
+        figure(f2)
+        t = mod(round(iter/plotFreq),xSz(3)) + 1;
+        imagesc(prox2(:,:,t));
+        title(sprintf('LMRLR: Wavelet array (t=%d) at iter: %d', t, iter));
         axis equal
         axis off
         drawnow

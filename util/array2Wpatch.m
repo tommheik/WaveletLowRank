@@ -92,19 +92,29 @@ switch mu
                 A = zeros([Csz(j,:), T], Xclass);
             else
                 A = zeros([prod(Psz(end,:)), T, prod(nP(end,:))], Xclass);
+                % How A is stored
+                if prod(nP(end,:)) == 1 % Only one patch
+                    aInd = 1:prod(Psz(end,:));
+                else % Multiple patches
+                    q1 = Psz(j+1,1); q2 = Psz(j+1,2);
+                    m = Csz(j+1,1); % Rows in coeff. subband
+                    pic = vec((1:q1)' + (0:q2-1)*m); % Patch Index Column for first patch
+                    pgr = vec(q1*(0:nP(j+1,1)-1)' + q2*m*(0:nP(j+1,2)-1));
+                    aInd = pic + pgr'; % Patch indicies. This can skip time information
+                end
             end
 
             R = Cind(j,1); C = Cind(j,2); % Cumulative index
             row = 1:Csz(j,1); col = 1:Csz(j,2);
 
-            if Np(1) == 1 && j < W.level % Only one patch
+            if Np(1) == 1 % Only one patch
                 for t = 1:T
                     [a,v,h,d] = dwt2(X(:,:,t), W.name, 'mode', W.mode);
                     V(:,t) = v(:); H(:,t) = h(:); D(:,t) = d(:);
                     if j < W.level
                         A(:,:,t) = a;
                     else % Final appr. coeffs. are patched too
-                        A(:,t) = a(:);
+                        A(:,t,:) = a(aInd);
                     end
                 end
                 X = A;
@@ -122,27 +132,25 @@ switch mu
                 Wpatch(R+row, col, :) = reshape(A,[Csz(j,:),T]); % v
                 Wpatch(row, C+col, :) = reshape(V,[Csz(j,:),T]); % h
                 Wpatch(R+row, C+col, :) = reshape(H,[Csz(j,:),T]); % d
-                if j == W.level
-                    [A, nn] = SVThreshold(X, mu);
-                    nuclear = nuclear + sum(nn); % Update nuclear norm
-                    Wpatch(row, col, :) = reshape(A,[Csz(j,:),T]); % a
-                end
 
-            else % Multiple patches
+            else % Multiple patches for detail coefficients
                 p1 = Psz(j,1); p2 = Psz(j,2);
                 m = Csz(j,1); % Rows in coeff. subband
                 pic = vec((1:p1)' + (0:p2-1)*m); % Patch Index Column for first patch
                 pgr = vec(p1*(0:nP(j,1)-1)' + p2*m*(0:nP(j,2)-1));
                 pInd = pic + pgr'; % Patch indicies. This can skip time information
 
-                if j == W.level && any(Psz(j+1,:) ~= Psz(j,:)) % Unique patch size for approximation coefficients
-                    q1 = Psz(j+1,1); q2 = Psz(j+1,2);
-                    m = Csz(j+1,1); % Rows in coeff. subband
-                    pic = vec((1:q1)' + (0:q2-1)*m); % Patch Index Column for first patch
-                    pgr = vec(q1*(0:nP(j+1,1)-1)' + q2*m*(0:nP(j+1,2)-1));
-                    aInd = pic + pgr'; % Patch indicies. This can skip time information
+                if j == W.level
+                    if any(Psz(j+1,:) ~= Psz(j,:)) % Unique patch size for approximation coefficients
+                        q1 = Psz(j+1,1); q2 = Psz(j+1,2);
+                        m = Csz(j+1,1); % Rows in coeff. subband
+                        pic = vec((1:q1)' + (0:q2-1)*m); % Patch Index Column for first patch
+                        pgr = vec(q1*(0:nP(j+1,1)-1)' + q2*m*(0:nP(j+1,2)-1));
+                        aInd = pic + pgr'; % Patch indicies. This can skip time information
+                    else
+                        aInd = pInd;
+                    end
                 else
-                    aInd = pInd;
                 end
 
                 for t = 1:T
@@ -162,42 +170,44 @@ switch mu
                 sic = vec(uint32(1:p1)' + (0:np1-1)*uint32(Np(2)*T)) + uint32((0:p2-1)*p1); % Indicies for Some Inverted Columns (for t=1)
                 aic = reshape(sic(:) + (0:np2-1)*uint32(Np(2)*T*np1), Csz(j,:)); % Indicies for All Inverted Columns (for t=1)
                 PInd = aic + uint32(reshape((0:T-1)*Np(2), 1, 1, T));
+
                 % Compute SVD on patched coefficient arrays, the output is of
                 % size p1*p2 x T x Np1*Np2
                 [A, nn] = SVThreshold(V, mu); % Overwrite A
                 nuclear = nuclear + sum(nn); % Update nuclear norm
-                % V = permute(A, [1,3,2]);
                 Wpatch(R+row, col, :) = A(PInd);
+
                 [A, nn] = SVThreshold(H, mu);
                 nuclear = nuclear + sum(nn); % Update nuclear norm
-                % H = permute(A, [1,3,2]);
                 Wpatch(row, C+col, :) = A(PInd);
+
                 [A, nn] = SVThreshold(D, mu);
                 nuclear = nuclear + sum(nn); % Update nuclear norm
-                % D = permute(A, [1,3,2]);
                 Wpatch(R+row, C+col, :) = A(PInd);
-                
-                if j == W.level
-                    if any(Psz(j+1,:) ~= Psz(j,:)) % Unique patch size for approximation coefficients
-                        % Np = [prod(nP(j+1,:)), prod(Psz(j+1,:))]; % product sizes: no. patches, patch size
-                        pLen = prod(Psz(j+1,:));
-                        % Reverting indicies, this one can NOT skip time information!
-                        nq1 = uint32(nP(j+1,1)); nq2 = uint32(nP(j+1,2)); % Number of patches
-                        sic = vec(uint32(1:q1)' + (0:nq1-1)*uint32(pLen*T)) + uint32((0:q2-1)*q1); % Indicies for Some Inverted Columns (for t=1)
-                        aic = reshape(sic(:) + (0:nq2-1)*uint32(pLen*T*nq1), Csz(j,:)); % Indicies for All Inverted Columns (for t=1)
-                        AInd = aic + uint32(reshape((0:T-1)*pLen, 1, 1, T));
-                    else
-                        AInd = PInd;
-                    end
-
-                    [A, nn] = SVThreshold(X, mu); % Overwrite V
-                    nuclear = nuclear + sum(nn); % Update nuclear norm
-                    % A = permute(V, [1,3,2]);
-                    Wpatch(row, col, :) = A(AInd);
-                end
 
             end % if one patch or multiple
         end % for scale j
+
+        % Approximation coefficients
+        row = 1:Csz(j+1,1); col = 1:Csz(j+1,2);
+        if prod(nP(j+1,:)) == 1 % Approx. coeff. use one patch only
+            [A, nn] = SVThreshold(X, mu);
+            nuclear = nuclear + sum(nn); % Update nuclear norm
+            Wpatch(row, col, :) = reshape(A,[Csz(j,:),T]); % a
+
+        else % Approx. coeff. use multiple patches
+            pLen = prod(Psz(j+1,:));
+            % Reverting indicies, this one can NOT skip time information!
+            nq1 = uint32(nP(j+1,1)); nq2 = uint32(nP(j+1,2)); % Number of patches
+            sic = vec(uint32(1:q1)' + (0:nq1-1)*uint32(pLen*T)) + uint32((0:q2-1)*q1); % Indicies for Some Inverted Columns (for t=1)
+            aic = reshape(sic(:) + (0:nq2-1)*uint32(pLen*T*nq1), Csz(j,:)); % Indicies for All Inverted Columns (for t=1)
+            AInd = aic + uint32(reshape((0:T-1)*pLen, 1, 1, T));
+
+            [A, nn] = SVThreshold(X, mu);
+            nuclear = nuclear + sum(nn); % Update nuclear norm
+            Wpatch(row, col, :) = A(AInd);
+        end
+        
 end % switch mu
 
 end
