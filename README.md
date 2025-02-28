@@ -12,11 +12,13 @@ tommheik
 ## MultiResolution Low-Rank (MRLR) Algorithm for dynamic X-ray tomography.
 (And some other low-rank algorithms.)
 
+<div class="row">
 <img src="./misc/stempo_LMRLR_recn_t4.png" width=20% alt="MRLR Stempo recn, t=4"/>
 <img src="./misc/stempo_LLR_recn_t4.png" width=20% alt="LLR Stempo recn, t=4"/>
 <img src="./misc/stempo_L+S_recn_t4.png" width=20% alt="L+S Stempo recn, t=4"/>
 <img src="./misc/stempo_TVNN_recn_t4.png" width=20% alt="FTVNNR Stempo recn, t=4"/>
 <img src="./misc/stempo_colorbar.png" width=2.4% alt="Colorbar"/> 
+</div>
 
 _From left to right: **MRLR**, LLR, L+S and FTVNNR methods. Example reconstructions using the [STEMPO](https://doi.org/10.1007/978-981-97-6769-4_1) data. Time step t=4 is shown._
 
