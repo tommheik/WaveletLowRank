@@ -1,5 +1,5 @@
-function [x, iter, info] = LMRLRalgorithm(A, m, xSz, param)
-%LMRLRALGORITHM Computes the Local MultiResolution Low-Rank regularization
+function [x, iter, info] = MRLRalgorithm(A, m, xSz, param)
+%MRLRALGORITHM Computes the MultiResolution Low-Rank regularization
 %algorithm given forward operator A, data m and additional parameters param
 %
 % INPUTS
@@ -115,13 +115,13 @@ while iter < maxIter
     if mod(iter,plotFreq) == 0
         figure(f1)
         montage(x, 'DisplayRange', []);
-        title(sprintf('LMRLR Reconstruction at iter: %d', iter));
+        title(sprintf('MRLR Reconstruction at iter: %d', iter));
         drawnow
 
         figure(f2)
         t = mod(round(iter/plotFreq),xSz(3)) + 1;
         imagesc(prox2(:,:,t));
-        title(sprintf('LMRLR: Wavelet array (t=%d) at iter: %d', t, iter));
+        title(sprintf('MRLR: Wavelet array (t=%d) at iter: %d', t, iter));
         axis equal
         axis off
         drawnow
