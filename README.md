@@ -12,10 +12,10 @@ tommheik
 ## MultiResolution Low-Rank (MRLR) Algorithm for dynamic X-ray tomography.
 (And some other low-rank algorithms.)
 
-<img src="./misc/stempo_LMRLR_recn_t4.png" width=22% alt="MRLR Stempo recn, t=4"/> 
-<img src="./misc/stempo_LLR_recn_t4.png" width=22% alt="LLR Stempo recn, t=4"/> 
-<img src="./misc/stempo_L+S_recn_t4.png" width=22% alt="L+S Stempo recn, t=4"/> 
-<img src="./misc/stempo_TVNN_recn_t4.png" width=22% alt="FTVNNR Stempo recn, t=4"/> 
+<img src="./misc/stempo_LMRLR_recn_t4.png" width=22% alt="MRLR Stempo recn, t=4"/>
+<img src="./misc/stempo_LLR_recn_t4.png" width=22% alt="LLR Stempo recn, t=4"/>
+<img src="./misc/stempo_L+S_recn_t4.png" width=22% alt="L+S Stempo recn, t=4"/>
+<img src="./misc/stempo_TVNN_recn_t4.png" width=22% alt="FTVNNR Stempo recn, t=4"/>
 <img src="./misc/stempo_colorbar.png" width=2.55% alt="Colorbar"/> 
 
 _From left to right: **MRLR**, LLR, L+S and FTVNNR methods. Example reconstructions using the [STEMPO](https://doi.org/10.1007/978-981-97-6769-4_1) data. Time step t=4 is shown._
@@ -44,6 +44,7 @@ Please cite the following if you use these codes:
     - [**LLR**] Local low-rank: traditional patch based method as explained in the article [[1]](#1).
     - [**L+S**] Low-rank + sparse: as explained in [[2]](#2) and [[3]](#3).
     - [**FTVNNR**] Fast Total Variation + global low rank regularization: as explained in [[4]](#4) and [[5]](#5).
+- `simulate_dynamic_data.m` is used to generate the simulated data.
 - [`algorithm`](/algorithm/) contains the different reconstruction algorithms and some standalone codes. Standalone codes may be slightly out of date.
 - [`util`](/util/) contains additional utility codes.
 - The FTVNNR algorithm is used as-is, with the exception of minor change on [line 38](https://github.com/uta-smile/FTVNNR_Dynamic_MRI_MEDIA/blob/d6166512a884930d5c15652632c2d6c8519d7303/FTVNNR_utilies/TVLR_opt.m#L38) of `TVLR_opt.m` which needs to be changed to  
