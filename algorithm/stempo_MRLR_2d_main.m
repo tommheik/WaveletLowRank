@@ -1,6 +1,6 @@
-%%%%%% stempo_LMRLR_2d_main.m %%%%%%
+%%%%%% stempo_MRLR_2d_main.m %%%%%%
 %
-% Example code for reconstructing the simulated data using local
+% Example code for reconstructing dynamic CT data using
 % multiresolution low-rank approximation
 % 
 %%%%%%
@@ -32,12 +32,16 @@
 % https://www.cs.ubc.ca/labs/scl/spot/
 % Recommended v1.2
 %
+% HelTomo Toolbox
+% https://github.com/Diagonalizable/HelTomo
+% v2.0
+%
 % Wavelet Toolbox
 % https://mathworks.com/products/wavelet.html
 %
 %%%%%%
 %
-% Created 24.9.2023 - Last edited 24.9.2024
+% Created 15.6.2023 - Last edited 28.2.2025
 % Tommi Heikkilä
 % LUT University
 
@@ -47,13 +51,35 @@ close all
 
 %% Load data
 
-load("simData_dynamic_256x256x180_parallel.mat");
+dataType = 'simulated'; % 'STEMPO' or 'simulated';
 
-addpath('./util')
+switch dataType
+    case 'STEMPO'
+        binning = 8;
+        dataset = 'cont360'; % 'seq8x45'; % cont360
+        switch dataset
+            case 'seq8x45'
+                load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_seq8x45_2d_b%d.mat',binning)))
+                dAngle = 8; % seq8x45 data is measured every 8 degrees
+            case 'cont360'
+                load(Gpath(sprintf('DynamicCTphantom/v3/ZENODO/stempo_cont360_2d_b%d.mat',binning)))
+                dAngle = 1; % cont360 data is measured every 1 degrees
+        end
+        N = 2240 / binning; % Spatial resolution of 2d slices
+        Ndet = N;
+        numberImages = CtData.parameters.numberImages;
+        sinogram = CtData.sinogram;
+
+    case 'simulated'
+        load("../data/simData_dynamic_256x256x180_parallel.mat");
+
+        N = size(obj,1); % Spatial resolution of 2d slices
+        [numberImages, Ndet] = size(sinogram);
+        dAngle = 1; % Difference between consecutive projection angles
+end
+
+addpath('../util')
 %% Choose parameters
-
-N = size(obj,1); % Spatial resolution of 2d slices
-[numberImages, Ndet] = size(sinogram);
 
 % We wish to split the sinogram into as many
 % time steps as possible (since that greatly limits the SVD and number of
@@ -66,12 +92,13 @@ N = size(obj,1); % Spatial resolution of 2d slices
 % t=1 :  X   X   X   X   X  ...  X
 % t=2 :                  X  ...  X    X    X    X    X
 % etc.
-Nangles = 30;
-angShift = 10;
+
+Nangles = 45;
+angShift = 15;
 T = (numberImages - Nangles + angShift) / angShift;
 
 % Projection angles are stored in columns (degrees!)
-angleArray = ((0:1:Nangles-1)' + angShift*(0:1:T-1));
+angleArray = dAngle*((0:1:Nangles-1)' + angShift*(0:1:T-1));
 
 % Reorganize the data in a similar manner to match the projection angles
 mInd = (1:Nangles)' + angShift*(0:1:T-1);
@@ -100,8 +127,15 @@ Anorm = zeros(1,T);
 for t = 1:T
     % Create and store the operator in a cell array
     fprintf("Op. %i/%i: ", t, T);
-    anglesRad = deg2rad(angleArray(:,t));
-    opCell{t} = create_ct_operator_2d_parallel_astra_cpu(N, N, Ndet, anglesRad);
+    switch dataType
+        case 'STEMPO'
+            % Change the projection angles stored in CtData
+            CtData.parameters.angles = angleArray(:,t);
+            opCell{t} = create_ct_operator_2d_fan_astra(CtData, N, N);
+        case 'simulated'
+            anglesRad = deg2rad(angleArray(:,t));
+            opCell{t} = create_ct_operator_2d_parallel_astra_cpu(N, N, Ndet, anglesRad);
+    end
     Anorm(t) = normest(opCell{t});
 end
 % cell{:} gives the content of a cell array as comma separated list
@@ -112,17 +146,24 @@ Anorm = max(Anorm);
 A = A/Anorm;
 m = m(:)/Anorm;
 
+mMax = max(m(:));
+delta = 0.0; % Noise level
+m = m + delta*mMax*randn(size(m)); % Gaussian noise
+fprintf('Added Gaussian noise: delta = %0.2f\n',delta)
+
 %% Run the algorithm
 % Set parameters
 
+% Patch sizes (per scale)
+% Psz = [7, 7; 7, 7; 7, 7; 7, 7];
 Psz = [16, 16; 8, 8; 8, 8; 8, 8];
 
 param.Psz = Psz;
-param.maxIter = 500;
+param.maxIter = 600;
 param.tol = 5e-4;
-param.mu = 1e-1; %1e-3; % Regularization parameter
+param.mu = 5e-1; %1e-2; % Regularization parameter
 param.plotFreq = 10; % Visualize iterations 
-param.wName = 'db2';
+param.wName = 'db3';
 param.wLevel = 3;
 param.wMode = 'per';
 xSz = [N,N,T];
