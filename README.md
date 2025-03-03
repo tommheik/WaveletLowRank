@@ -26,14 +26,14 @@ These codes were used to obtain the numerical results in
 
 > <a id="1">[1]</a> T. Heikkilä,  
 "MultiResolution Low-Rank Regularization of Dynamic Imaging Problems"  
-_arXiv pre-print_: [code](https://arxiv.com) (2025)
+_arXiv pre-print_: [2502.20977](http://arxiv.org/abs/2502.20977) (2025)
 
 Please cite the following if you use these codes:
 
     @article{heikkila2025multiresolution,
         title={{MultiResolution Low-Rank Regularization of Dynamic Imaging Problems}},
         author={Heikkilä, Tommi},
-        journal={arXiv preprint arXiv:code},
+        journal={arXiv preprint arXiv:2502.20977},
         year={2025}
     }
 
