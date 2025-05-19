@@ -22,18 +22,27 @@ tommheik
 
 _From left to right: **MRLR**, LLR, L+S and FTVNNR methods. Example reconstructions using the [STEMPO](https://doi.org/10.1007/978-981-97-6769-4_1) data. Time step t=4 is shown._
 
+<div class="row">
+<img src="./misc/simu_ref.gif" width=20% alt="Simulated reference, gif"/>
+<img src="./misc/MRLR_simu.gif" width=20% alt="MRLR simulated recn, gif"/>
+<img src="./misc/LLR_simu.gif" width=20% alt="LLR simulated recn, gif"/>
+<img src="./misc/FTVNNR_simu.gif" width=20% alt="FTVNNR simulated recn, gif"/>
+</div>
+
+_From left to right: **MRLR**, LLR and FTVNNR methods. Example reconstructions using simulated data. All 32 times steps are shown (gifs not necessarily in sync)._
+
 These codes were used to obtain the numerical results in  
 
 > <a id="1">[1]</a> T. Heikkilä,  
 "MultiResolution Low-Rank Regularization of Dynamic Imaging Problems"  
-_arXiv pre-print_: [2502.20977](http://arxiv.org/abs/2502.20977) (2025)
+_arXiv pre-print_: [code](https://arxiv.com) (2025)
 
 Please cite the following if you use these codes:
 
     @article{heikkila2025multiresolution,
         title={{MultiResolution Low-Rank Regularization of Dynamic Imaging Problems}},
         author={Heikkilä, Tommi},
-        journal={arXiv preprint arXiv:2502.20977},
+        journal={arXiv preprint arXiv:code},
         year={2025}
     }
 
