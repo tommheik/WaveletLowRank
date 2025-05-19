@@ -20,7 +20,7 @@ tommheik
 <img src="./misc/stempo_colorbar.png" width=2.4% alt="Colorbar"/> 
 </div>
 
-_From left to right: **MRLR**, LLR, L+S and FTVNNR methods. Example reconstructions using the [STEMPO](https://doi.org/10.1007/978-981-97-6769-4_1) data. Time step t=4 is shown._
+_From left to right: ground truth, **MRLR**, LLR, L+S and FTVNNR methods. Example reconstructions using the [STEMPO](https://doi.org/10.1007/978-981-97-6769-4_1) data. Time step t=4 is shown._
 
 <div class="row">
 <img src="./misc/simu_ref.gif" width=20% alt="Simulated reference, gif"/>
