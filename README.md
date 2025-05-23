@@ -34,16 +34,21 @@ _From left to right: ground truth, **MRLR**, LLR and FTVNNR methods. Example rec
 These codes were used to obtain the numerical results in  
 
 > <a id="1">[1]</a> T. Heikkilä,  
-"MultiResolution Low-Rank Regularization of Dynamic Imaging Problems"  
-_arXiv pre-print_: [code](https://arxiv.com) (2025)
+"MultiResolution Low-Rank Regularization of Dynamic Imaging Problems"
+Scale Space and Variational Methods in Computer Vision. SSVM 2025. _Lecture Notes in Computer Science_, vol 15667. Springer.
+_DOI_: [10.1007/978-3-031-92366-1_6](https://doi.org/10.1007/978-3-031-92366-1_6)  
+_arXiv pre-print_: [2502.20977](https://arxiv.org/abs/2502.20977) (2025)
 
 Please cite the following if you use these codes:
 
-    @article{heikkila2025multiresolution,
+    @inproceedings{heikkila2025multiresolution,
         title={{MultiResolution Low-Rank Regularization of Dynamic Imaging Problems}},
         author={Heikkilä, Tommi},
-        journal={arXiv preprint arXiv:code},
-        year={2025}
+        booktitle={International Conference on Scale Space and Variational Methods in Computer Vision},
+        pages={70--82},
+        year={2025},
+        series={LNCS, volume 15667},
+        organization={Springer}
     }
 
 ### Contents
